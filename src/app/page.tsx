@@ -9,7 +9,6 @@ import { SubmitTransaction } from '@/components/SubmitTransaction';
 import { TransactionList } from '@/components/TransactionList';
 import { OwnerManagement } from '@/components/OwnerManagement';
 import { DeploySafe } from '@/components/DeploySafe';
-import { NetworkIndicator } from '@/components/NetworkIndicator';
 import { useMultiSigContext } from '@/contexts/MultiSigContext';
 
 type Tab = 'dashboard' | 'transactions' | 'submit' | 'owners' | 'deploy';
@@ -62,9 +61,6 @@ export default function Home() {
           <div className="flex justify-end">
             <ConnectWallet />
           </div>
-
-          {/* Network Indicator */}
-          <NetworkIndicator />
 
           {/* Wallet Selector */}
           {showDeploySafe ? (
