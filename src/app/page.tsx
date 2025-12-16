@@ -17,6 +17,7 @@ export default function Home() {
   const { isConnected } = useAccount();
   const { walletAddress } = useMultiSigContext();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [showDeploySafe, setShowDeploySafe] = useState(false);
 
   return (
     <main className="min-h-screen p-4 max-w-md mx-auto">
@@ -62,22 +63,16 @@ export default function Home() {
           </div>
 
           {/* Wallet Selector */}
-          <WalletSelector />
+          {showDeploySafe ? (
+            <DeploySafe onBack={() => setShowDeploySafe(false)} />
+          ) : (
+            <WalletSelector onDeployClick={() => setShowDeploySafe(true)} />
+          )}
 
           {/* Navigation Tabs */}
-          <div className="flex gap-1 bg-white/5 rounded-lg p-1">
-            <button
-              onClick={() => setActiveTab('deploy')}
-              className={`flex-1 py-2 rounded-md text-sm transition-colors ${
-                activeTab === 'deploy'
-                  ? 'bg-farcaster-purple text-white'
-                  : 'text-white/60 hover:text-white'
-              }`}
-            >
-              Deploy
-            </button>
-            {walletAddress && (
-              <>
+          {walletAddress && !showDeploySafe && (
+            <>
+              <div className="flex gap-1 bg-white/5 rounded-lg p-1">
                 <button
                   onClick={() => setActiveTab('dashboard')}
                   className={`flex-1 py-2 rounded-md text-sm transition-colors ${
@@ -118,18 +113,17 @@ export default function Home() {
                 >
                   Owners
                 </button>
-              </>
-            )}
-          </div>
+              </div>
 
-          {/* Tab Content */}
-          <div className="mt-4">
-            {activeTab === 'deploy' && <DeploySafe />}
-            {activeTab === 'dashboard' && <WalletDashboard />}
-            {activeTab === 'transactions' && <TransactionList />}
-            {activeTab === 'submit' && <SubmitTransaction />}
-            {activeTab === 'owners' && <OwnerManagement />}
-          </div>
+              {/* Tab Content */}
+              <div className="mt-4">
+                {activeTab === 'dashboard' && <WalletDashboard />}
+                {activeTab === 'transactions' && <TransactionList />}
+                {activeTab === 'submit' && <SubmitTransaction />}
+                {activeTab === 'owners' && <OwnerManagement />}
+              </div>
+            </>
+          )}
         </div>
       )}
 
