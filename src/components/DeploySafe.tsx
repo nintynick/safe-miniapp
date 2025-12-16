@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useWalletClient } from 'wagmi';
-import { isAddress, type WalletClient } from 'viem';
+import { useAccount, useWalletClient, useSwitchChain } from 'wagmi';
+import { isAddress } from 'viem';
+import { base } from 'wagmi/chains';
 import { ethers } from 'ethers';
 import MultiSigWalletArtifact from '../../artifacts/src/contracts/MultiSigWallet.sol/MultiSigWallet.json';
 
@@ -11,8 +12,9 @@ interface DeploySafeProps {
 }
 
 export function DeploySafe({ onBack }: DeploySafeProps) {
-  const { address } = useAccount();
+  const { address, chainId } = useAccount();
   const { data: walletClient } = useWalletClient();
+  const { switchChainAsync } = useSwitchChain();
 
   const [owners, setOwners] = useState<string[]>([address || '']);
   const [requiredConfirmations, setRequiredConfirmations] = useState(1);
@@ -66,11 +68,31 @@ export function DeploySafe({ onBack }: DeploySafeProps) {
     try {
       setIsDeploying(true);
 
+      // Ensure we're on Base chain
+      if (chainId !== base.id) {
+        console.log('Switching to Base chain...');
+        await switchChainAsync({ chainId: base.id });
+      }
+
       // Create ethers provider from viem walletClient
-      const provider = new ethers.BrowserProvider(walletClient as any);
+      const provider = new ethers.BrowserProvider(walletClient as any, {
+        chainId: base.id,
+        name: 'Base',
+      });
       const signer = await provider.getSigner();
 
+      // Check balance before deploying
+      const balance = await provider.getBalance(await signer.getAddress());
+      console.log('Account balance:', ethers.formatEther(balance), 'ETH');
+
+      if (balance === BigInt(0)) {
+        setError('Insufficient ETH balance on Base. You need ETH to pay for gas.');
+        setIsDeploying(false);
+        return;
+      }
+
       console.log('Deploying MultiSigWallet with the account:', await signer.getAddress());
+      console.log('Chain ID:', base.id);
       console.log('Owners:', validOwners);
       console.log('Required confirmations:', requiredConfirmations);
 
@@ -92,7 +114,18 @@ export function DeploySafe({ onBack }: DeploySafeProps) {
       setDeployedAddress(contractAddress);
     } catch (err: any) {
       console.error('Deployment error:', err);
-      setError(err.message || 'Failed to deploy Safe');
+
+      // Parse common error messages
+      let errorMessage = err.message || 'Failed to deploy Safe';
+      if (errorMessage.includes('insufficient funds')) {
+        errorMessage = 'Insufficient ETH balance on Base to pay for gas';
+      } else if (errorMessage.includes('user rejected') || errorMessage.includes('denied')) {
+        errorMessage = 'Transaction was rejected';
+      } else if (errorMessage.includes('CALL_EXCEPTION') || errorMessage.includes('missing revert data')) {
+        errorMessage = 'Transaction failed. Please ensure you have enough ETH on Base for gas.';
+      }
+
+      setError(errorMessage);
     } finally {
       setIsDeploying(false);
     }
