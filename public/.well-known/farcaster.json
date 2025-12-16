@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjM1NTgsInR5cGUiOiJhdXRoIiwia2V5IjoiMHgzRDMyMzNFODUyNjQ4NkMxRDA3MTM3ODAwMDNCMTVkMTY1NGM5YWEwIn0",
+    "payload": "eyJkb21haW4iOiJzYWZlLnByb2xpZmljNDMuY29tIn0",
+    "signature": "4ddlsDpWU59Iry2qnB7xxmNkSyLEhVdM7xOZOKk5fEJqMIegzgWpxcwOFd62VnmYyKOFnbB+oO95EUl14mCoSBs="
+  },
+  "frame": {
+    "version": "1",
+    "name": "Safe MultiSig",
+    "iconUrl": "https://safe.prolific43.com/icon.png",
+    "homeUrl": "https://safe.prolific43.com",
+    "imageUrl": "https://safe.prolific43.com/og-image.png",
+    "buttonTitle": "Open MultiSig",
+    "splashImageUrl": "https://safe.prolific43.com/splash.png",
+    "splashBackgroundColor": "#1A1A2E",
+    "webhookUrl": "https://safe.prolific43.com/api/webhook"
+  }
+}
