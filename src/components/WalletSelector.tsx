@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { useMultiSigContext } from '@/contexts/MultiSigContext';
 import { isAddress } from 'viem';
 
-export function WalletSelector() {
+interface WalletSelectorProps {
+  onDeployClick?: () => void;
+}
+
+export function WalletSelector({ onDeployClick }: WalletSelectorProps) {
   const { walletAddress, setWalletAddress } = useMultiSigContext();
   const [inputAddress, setInputAddress] = useState(walletAddress || '');
   const [error, setError] = useState('');
@@ -53,6 +57,18 @@ export function WalletSelector() {
           </p>
         )}
       </form>
+
+      {onDeployClick && (
+        <div className="mt-3 pt-3 border-t border-white/10">
+          <button
+            type="button"
+            onClick={onDeployClick}
+            className="btn-secondary w-full text-sm"
+          >
+            Deploy New Safe on Base
+          </button>
+        </div>
+      )}
     </div>
   );
 }
