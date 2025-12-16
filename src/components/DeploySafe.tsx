@@ -67,15 +67,25 @@ export function DeploySafe({ onBack }: DeploySafeProps) {
     try {
       setIsDeploying(true);
 
+      console.log('Deploying with walletClient chain:', walletClient.chain);
+      console.log('Using publicClient chain:', publicClient.chain);
+
       // Deploy the contract
       const hash = await walletClient.deployContract({
         abi: multiSigWalletABI,
         bytecode: ('0x' + MULTISIG_BYTECODE) as `0x${string}`,
         args: [validOwners as `0x${string}`[], BigInt(requiredConfirmations)],
+        chain: base,
       });
+
+      console.log('Deployment transaction hash:', hash);
+      console.log('Waiting for transaction on Base...');
 
       // Wait for transaction
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+      console.log('Transaction receipt:', receipt);
+      console.log('Contract deployed to:', receipt.contractAddress);
 
       if (receipt.contractAddress) {
         setDeployedAddress(receipt.contractAddress);
