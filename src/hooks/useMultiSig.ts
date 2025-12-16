@@ -1,32 +1,37 @@
 'use client';
 
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount, useBalance } from 'wagmi';
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount, useBalance, useChainId } from 'wagmi';
 import { multiSigWalletABI } from '@/lib/abi';
 import type { Transaction } from '@/types/multisig';
 
 export function useMultiSigWallet(walletAddress: `0x${string}` | undefined) {
   const { address: userAddress } = useAccount();
+  const chainId = useChainId();
 
   const { data: balance } = useBalance({
     address: walletAddress,
+    chainId: chainId,
   });
 
   const { data: owners } = useReadContract({
     address: walletAddress,
     abi: multiSigWalletABI,
     functionName: 'getOwners',
+    chainId: chainId,
   });
 
   const { data: required } = useReadContract({
     address: walletAddress,
     abi: multiSigWalletABI,
     functionName: 'required',
+    chainId: chainId,
   });
 
   const { data: transactionCount } = useReadContract({
     address: walletAddress,
     abi: multiSigWalletABI,
     functionName: 'transactionCount',
+    chainId: chainId,
   });
 
   const { data: isOwner } = useReadContract({
@@ -34,6 +39,10 @@ export function useMultiSigWallet(walletAddress: `0x${string}` | undefined) {
     abi: multiSigWalletABI,
     functionName: 'isOwner',
     args: userAddress ? [userAddress] : undefined,
+    chainId: chainId,
+    query: {
+      enabled: !!walletAddress && !!userAddress,
+    },
   });
 
   return {
@@ -47,11 +56,14 @@ export function useMultiSigWallet(walletAddress: `0x${string}` | undefined) {
 }
 
 export function useTransaction(walletAddress: `0x${string}` | undefined, transactionId: bigint | undefined) {
+  const chainId = useChainId();
+
   const { data: transaction } = useReadContract({
     address: walletAddress,
     abi: multiSigWalletABI,
     functionName: 'getTransaction',
     args: transactionId !== undefined ? [transactionId] : undefined,
+    chainId: chainId,
   });
 
   const { data: confirmations } = useReadContract({
@@ -59,6 +71,7 @@ export function useTransaction(walletAddress: `0x${string}` | undefined, transac
     abi: multiSigWalletABI,
     functionName: 'getConfirmations',
     args: transactionId !== undefined ? [transactionId] : undefined,
+    chainId: chainId,
   });
 
   const { data: confirmationCount } = useReadContract({
@@ -66,6 +79,7 @@ export function useTransaction(walletAddress: `0x${string}` | undefined, transac
     abi: multiSigWalletABI,
     functionName: 'getConfirmationCount',
     args: transactionId !== undefined ? [transactionId] : undefined,
+    chainId: chainId,
   });
 
   const { data: isConfirmed } = useReadContract({
@@ -73,6 +87,7 @@ export function useTransaction(walletAddress: `0x${string}` | undefined, transac
     abi: multiSigWalletABI,
     functionName: 'isConfirmed',
     args: transactionId !== undefined ? [transactionId] : undefined,
+    chainId: chainId,
   });
 
   if (!transaction || transactionId === undefined) {
