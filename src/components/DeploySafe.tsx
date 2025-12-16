@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useWalletClient, useSwitchChain } from 'wagmi';
-import { isAddress } from 'viem';
+import { useAccount, useWalletClient, useSwitchChain, usePublicClient } from 'wagmi';
+import { isAddress, type Address, encodeDeployData, formatEther } from 'viem';
 import { base } from 'wagmi/chains';
-import { ethers } from 'ethers';
 import MultiSigWalletArtifact from '../../artifacts/src/contracts/MultiSigWallet.sol/MultiSigWallet.json';
 
 interface DeploySafeProps {
@@ -15,6 +14,7 @@ export function DeploySafe({ onBack }: DeploySafeProps) {
   const { address, chainId } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { switchChainAsync } = useSwitchChain();
+  const publicClient = usePublicClient();
 
   const [owners, setOwners] = useState<string[]>([address || '']);
   const [requiredConfirmations, setRequiredConfirmations] = useState(1);
@@ -42,7 +42,7 @@ export function DeploySafe({ onBack }: DeploySafeProps) {
     setDeployedAddress('');
 
     // Validation
-    const validOwners = owners.filter(o => o.trim() !== '');
+    const validOwners = owners.filter(o => o.trim() !== '') as Address[];
     if (validOwners.length === 0) {
       setError('At least one owner is required');
       return;
@@ -65,6 +65,11 @@ export function DeploySafe({ onBack }: DeploySafeProps) {
       return;
     }
 
+    if (!publicClient) {
+      setError('Network not available');
+      return;
+    }
+
     try {
       setIsDeploying(true);
 
@@ -74,16 +79,9 @@ export function DeploySafe({ onBack }: DeploySafeProps) {
         await switchChainAsync({ chainId: base.id });
       }
 
-      // Create ethers provider from viem walletClient
-      const provider = new ethers.BrowserProvider(walletClient as any, {
-        chainId: base.id,
-        name: 'Base',
-      });
-      const signer = await provider.getSigner();
-
       // Check balance before deploying
-      const balance = await provider.getBalance(await signer.getAddress());
-      console.log('Account balance:', ethers.formatEther(balance), 'ETH');
+      const balance = await publicClient.getBalance({ address: walletClient.account.address });
+      console.log('Account balance:', formatEther(balance), 'ETH');
 
       if (balance === BigInt(0)) {
         setError('Insufficient ETH balance on Base. You need ETH to pay for gas.');
@@ -91,35 +89,39 @@ export function DeploySafe({ onBack }: DeploySafeProps) {
         return;
       }
 
-      console.log('Deploying MultiSigWallet with the account:', await signer.getAddress());
+      console.log('Deploying MultiSigWallet with the account:', walletClient.account.address);
       console.log('Chain ID:', base.id);
       console.log('Owners:', validOwners);
       console.log('Required confirmations:', requiredConfirmations);
 
-      // Deploy using ethers ContractFactory (same as deploy script)
-      const MultiSigWallet = new ethers.ContractFactory(
-        MultiSigWalletArtifact.abi,
-        MultiSigWalletArtifact.bytecode,
-        signer
-      );
+      // Deploy using viem walletClient directly
+      const hash = await walletClient.deployContract({
+        abi: MultiSigWalletArtifact.abi,
+        bytecode: MultiSigWalletArtifact.bytecode as `0x${string}`,
+        args: [validOwners, BigInt(requiredConfirmations)],
+        chain: base,
+      });
 
-      const wallet = await MultiSigWallet.deploy(validOwners, requiredConfirmations);
+      console.log('Deployment transaction sent:', hash);
+      console.log('Waiting for confirmation...');
 
-      console.log('Deployment transaction sent, waiting for confirmation...');
-      await wallet.waitForDeployment();
+      // Wait for the transaction to be mined
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
-      const contractAddress = await wallet.getAddress();
-      console.log('MultiSigWallet deployed to:', contractAddress);
-
-      setDeployedAddress(contractAddress);
+      if (receipt.contractAddress) {
+        console.log('MultiSigWallet deployed to:', receipt.contractAddress);
+        setDeployedAddress(receipt.contractAddress);
+      } else {
+        setError('Contract deployment failed - no contract address returned');
+      }
     } catch (err: any) {
       console.error('Deployment error:', err);
 
       // Parse common error messages
       let errorMessage = err.message || 'Failed to deploy Safe';
-      if (errorMessage.includes('insufficient funds')) {
+      if (errorMessage.includes('insufficient funds') || errorMessage.includes('exceeds the balance')) {
         errorMessage = 'Insufficient ETH balance on Base to pay for gas';
-      } else if (errorMessage.includes('user rejected') || errorMessage.includes('denied')) {
+      } else if (errorMessage.includes('user rejected') || errorMessage.includes('denied') || errorMessage.includes('User rejected')) {
         errorMessage = 'Transaction was rejected';
       } else if (errorMessage.includes('CALL_EXCEPTION') || errorMessage.includes('missing revert data')) {
         errorMessage = 'Transaction failed. Please ensure you have enough ETH on Base for gas.';
