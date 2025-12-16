@@ -8,16 +8,14 @@ import { WalletDashboard } from '@/components/WalletDashboard';
 import { SubmitTransaction } from '@/components/SubmitTransaction';
 import { TransactionList } from '@/components/TransactionList';
 import { OwnerManagement } from '@/components/OwnerManagement';
-import { DeploySafe } from '@/components/DeploySafe';
 import { useMultiSigContext } from '@/contexts/MultiSigContext';
 
-type Tab = 'dashboard' | 'transactions' | 'submit' | 'owners' | 'deploy';
+type Tab = 'dashboard' | 'transactions' | 'submit' | 'owners';
 
 export default function Home() {
   const { isConnected } = useAccount();
   const { walletAddress } = useMultiSigContext();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
-  const [showDeploySafe, setShowDeploySafe] = useState(false);
 
   return (
     <main className="min-h-screen p-4 max-w-md mx-auto">
@@ -63,14 +61,10 @@ export default function Home() {
           </div>
 
           {/* Wallet Selector */}
-          {showDeploySafe ? (
-            <DeploySafe onBack={() => setShowDeploySafe(false)} />
-          ) : (
-            <WalletSelector onDeployClick={() => setShowDeploySafe(true)} />
-          )}
+          <WalletSelector />
 
           {/* Navigation Tabs */}
-          {walletAddress && !showDeploySafe && (
+          {walletAddress && (
             <>
               <div className="flex gap-1 bg-white/5 rounded-lg p-1">
                 <button
