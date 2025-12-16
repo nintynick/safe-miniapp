@@ -65,7 +65,7 @@ export function WalletSelector({ onDeployClick }: WalletSelectorProps) {
             onClick={onDeployClick}
             className="btn-secondary w-full text-sm"
           >
-            Deploy New Safe
+            Deploy New Safe on Base
           </button>
         </div>
       )}

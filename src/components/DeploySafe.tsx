@@ -114,7 +114,7 @@ export function DeploySafe({ onBack }: DeploySafeProps) {
           </button>
         )}
         <h2 className="text-lg font-semibold text-white">
-          Deploy New Safe
+          Deploy New Safe on Base
         </h2>
       </div>
 
