@@ -116,16 +116,20 @@ export function DeploySafe({ onBack }: DeploySafeProps) {
       }
     } catch (err: any) {
       console.error('Deployment error:', err);
+      console.error('Error name:', err.name);
+      console.error('Error cause:', err.cause);
+      console.error('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
 
       // Parse common error messages
-      let errorMessage = err.message || 'Failed to deploy Safe';
+      let errorMessage = err.shortMessage || err.message || 'Failed to deploy Safe';
+
+      // Check for specific error types
       if (errorMessage.includes('insufficient funds') || errorMessage.includes('exceeds the balance')) {
         errorMessage = 'Insufficient ETH balance on Base to pay for gas';
       } else if (errorMessage.includes('user rejected') || errorMessage.includes('denied') || errorMessage.includes('User rejected')) {
         errorMessage = 'Transaction was rejected';
-      } else if (errorMessage.includes('CALL_EXCEPTION') || errorMessage.includes('missing revert data')) {
-        errorMessage = 'Transaction failed. Please ensure you have enough ETH on Base for gas.';
       }
+      // For other errors, show the actual message for debugging
 
       setError(errorMessage);
     } finally {
