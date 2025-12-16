@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
 import { parseEther, isAddress } from 'viem';
+import { base } from 'wagmi/chains';
 import { multiSigWalletABI } from '@/lib/abi';
 
 interface DeploySafeProps {
@@ -11,8 +12,8 @@ interface DeploySafeProps {
 
 export function DeploySafe({ onBack }: DeploySafeProps) {
   const { address } = useAccount();
-  const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient({ chainId: base.id });
+  const publicClient = usePublicClient({ chainId: base.id });
 
   const [owners, setOwners] = useState<string[]>([address || '']);
   const [requiredConfirmations, setRequiredConfirmations] = useState(1);
